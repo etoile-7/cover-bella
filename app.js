@@ -39,6 +39,7 @@ let cropOffsetX = 0;
 let cropOffsetY = 0;
 let isDraggingCrop = false;
 let lastDragPoint = null;
+let checkedTitleTag = titleTagInputs.find((input) => input.checked) || null;
 
 setToday();
 boot();
@@ -93,7 +94,15 @@ function bindEvents() {
   }
 
   for (const element of titleTagInputs) {
-    element.addEventListener("change", scheduleRender);
+    element.addEventListener("click", () => {
+      if (checkedTitleTag === element) {
+        element.checked = false;
+        checkedTitleTag = null;
+      } else {
+        checkedTitleTag = element;
+      }
+      scheduleRender();
+    });
   }
 
   titleInput.addEventListener("focus", () => {
