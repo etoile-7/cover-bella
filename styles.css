@@ -55,7 +55,7 @@ a {
   gap: 24px;
   max-width: 1420px;
   margin: 0 auto;
-  align-items: start;
+  align-items: stretch;
 }
 
 .panel {
@@ -272,7 +272,7 @@ a {
 
 .canvas-wrap {
   width: 100%;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 4px;
   background:
@@ -299,6 +299,24 @@ canvas:focus-visible {
 
 canvas.is-dragging-crop {
   cursor: grabbing;
+}
+
+@media (min-width: 921px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app-shell {
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
+  .controls {
+    height: 100%;
+    align-content: start;
+  }
 }
 
 @media (max-width: 920px) {
