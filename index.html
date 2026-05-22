@@ -27,7 +27,19 @@
 
           <div class="field">
             <label for="titleInput">直播标题</label>
-            <input id="titleInput" type="text" value="【3D】环游世界歌回" autocomplete="off">
+            <div class="title-builder">
+              <div class="title-tags" aria-label="标题前缀">
+                <label class="tag-option">
+                  <input type="checkbox" name="titleTag" value="【3D】" checked>
+                  <span>【3D】</span>
+                </label>
+                <label class="tag-option">
+                  <input type="checkbox" name="titleTag" value="【突击】">
+                  <span>【突击】</span>
+                </label>
+              </div>
+              <input id="titleInput" type="text" value="环游世界歌回" autocomplete="off">
+            </div>
           </div>
 
           <div class="field">

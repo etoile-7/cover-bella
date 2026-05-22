@@ -21,6 +21,7 @@ const fileName = document.querySelector("#fileName");
 const pasteMenu = document.querySelector("#pasteMenu");
 const pasteImageButton = document.querySelector("#pasteImageButton");
 const titleInput = document.querySelector("#titleInput");
+const titleTagInputs = [...document.querySelectorAll('input[name="titleTag"]')];
 const dateInput = document.querySelector("#dateInput");
 const resetCropButton = document.querySelector("#resetCropButton");
 const downloadLink = document.querySelector("#downloadLink");
@@ -90,6 +91,18 @@ function bindEvents() {
   for (const element of [titleInput, dateInput]) {
     element.addEventListener("input", scheduleRender);
   }
+
+  for (const element of titleTagInputs) {
+    element.addEventListener("change", scheduleRender);
+  }
+
+  titleInput.addEventListener("focus", () => {
+    titleInput.select();
+  });
+
+  titleInput.addEventListener("click", () => {
+    titleInput.select();
+  });
 
   resetCropButton.addEventListener("click", () => {
     resetCrop();
@@ -314,7 +327,7 @@ function clamp(value, min, max) {
 }
 
 function drawText() {
-  const title = titleInput.value.trim();
+  const title = getTitleText();
   const dateText = normalizeDate(dateInput.value);
 
   ctx.save();
@@ -357,7 +370,7 @@ async function updateDownload() {
   }
 
   const currentSeq = ++exportSeq;
-  const title = sanitizeFilePart(titleInput.value.trim()) || "cover";
+  const title = sanitizeFilePart(getTitleText()) || "cover";
   const date = normalizeDate(dateInput.value).replaceAll("/", "_");
   const name = sanitizeFilePart(`${date} ${title}`.trim()) || "cover";
   statusText.textContent = "压缩导出";
@@ -376,6 +389,14 @@ async function updateDownload() {
   downloadLink.classList.remove("disabled");
   downloadLink.setAttribute("aria-disabled", "false");
   statusText.textContent = "生成完成";
+}
+
+function getTitleText() {
+  const tags = titleTagInputs
+    .filter((input) => input.checked)
+    .map((input) => input.value)
+    .join("");
+  return `${tags}${titleInput.value.trim()}`;
 }
 
 function drawPlaceholder() {

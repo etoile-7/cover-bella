@@ -204,6 +204,55 @@ a {
   box-shadow: 0 0 0 3px rgba(234, 255, 245, 0.1);
 }
 
+.title-builder {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.title-tags {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.tag-option {
+  display: grid;
+  min-width: 0;
+}
+
+.tag-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tag-option span {
+  display: grid;
+  min-height: 46px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(250, 252, 253, 0.06);
+  color: var(--soft);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 720;
+  transition: border-color 100ms linear, background 100ms linear, color 100ms linear;
+}
+
+.tag-option input:checked + span {
+  border-color: var(--line-strong);
+  background: rgba(234, 255, 245, 0.16);
+  color: var(--ink);
+}
+
+.tag-option input:focus-visible + span {
+  box-shadow: 0 0 0 3px rgba(234, 255, 245, 0.1);
+}
+
 .actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -337,6 +386,10 @@ canvas.is-dragging-crop {
   .controls,
   .preview-panel {
     padding: 16px;
+  }
+
+  .title-builder {
+    grid-template-columns: 1fr;
   }
 
   .actions {
