@@ -5,7 +5,9 @@ const IMAGE_BOX = { x: 1075, y: 211, width: 2198, height: 1227 };
 const TEXT_RIGHT_X = 3276;
 const TITLE_TOP_Y = 1507;
 const DATE_TOP_Y = 1638;
-const TITLE_MAX_WIDTH = 1500;
+const TITLE_MAX_WIDTH = 1780;
+const TITLE_BASE_SIZE = 145;
+const TITLE_MIN_SIZE = 106;
 const TITLE_COLOR = "#eeebff";
 const DATE_COLOR = "#ffffff";
 const TEMPLATE_SRC = "assets/cover-template.webp";
@@ -396,13 +398,13 @@ function drawText(targetCtx) {
 }
 
 function fitTitleFont(targetCtx, title) {
-  for (let size = 145; size >= 72; size -= 4) {
+  for (let size = TITLE_BASE_SIZE; size >= TITLE_MIN_SIZE; size -= 2) {
     targetCtx.font = `${size}px ChillRoundF, "Microsoft YaHei", sans-serif`;
     if (targetCtx.measureText(title).width <= TITLE_MAX_WIDTH) {
       return size;
     }
   }
-  return 72;
+  return TITLE_MIN_SIZE;
 }
 
 function updateDownloadState() {
