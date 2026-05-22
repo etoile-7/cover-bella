@@ -1,5 +1,6 @@
 const CANVAS_WIDTH = 3780;
 const CANVAS_HEIGHT = 2126;
+const PREVIEW_SCALE = 0.5;
 const IMAGE_BOX = { x: 1075, y: 211, width: 2198, height: 1227 };
 const TEXT_RIGHT_X = 3276;
 const TITLE_TOP_Y = 1507;
@@ -30,10 +31,10 @@ const statusText = document.querySelector("#statusText");
 let sourceImage = null;
 let sourceObjectUrl = "";
 let templateImage = null;
-let renderTimer = 0;
+let renderFrame = 0;
 let coverFontReady = false;
 let downloadObjectUrl = "";
-let exportSeq = 0;
+let isExporting = false;
 let cropZoom = 1;
 let cropOffsetX = 0;
 let cropOffsetY = 0;
@@ -177,6 +178,11 @@ function bindEvents() {
       setImageFile(file);
     }
   });
+
+  downloadLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    void downloadCover();
+  });
 }
 
 function showPasteMenu(x, y) {
@@ -225,42 +231,52 @@ function resetCrop() {
 }
 
 function scheduleRender() {
-  clearTimeout(renderTimer);
-  renderTimer = window.setTimeout(() => {
-    void renderCover();
-  }, 60);
+  if (renderFrame) {
+    return;
+  }
+  renderFrame = window.requestAnimationFrame(() => {
+    renderFrame = 0;
+    void renderPreview();
+  });
 }
 
-async function renderCover() {
+async function renderPreview() {
   if (!templateImage) {
     return;
   }
 
-  ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-  ctx.fillStyle = "#141414";
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-  if (sourceImage) {
-    drawCoverImage();
-  }
-
-  ctx.drawImage(templateImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   if (sourceImage) {
     await ensureCoverFontLoaded();
   }
-  drawText();
-  void updateDownload();
+  drawCover(ctx, PREVIEW_SCALE);
+  updateDownloadState();
 }
 
-function drawCoverImage() {
+function drawCover(targetCtx, scale) {
+  targetCtx.save();
+  targetCtx.setTransform(scale, 0, 0, scale, 0, 0);
+  targetCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  targetCtx.fillStyle = "#141414";
+  targetCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  if (sourceImage) {
+    drawCoverImage(targetCtx);
+  }
+
+  targetCtx.drawImage(templateImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  drawText(targetCtx);
+  targetCtx.restore();
+}
+
+function drawCoverImage(targetCtx) {
   const { x, y, width, height } = getCropDrawRect();
 
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(IMAGE_BOX.x, IMAGE_BOX.y, IMAGE_BOX.width, IMAGE_BOX.height);
-  ctx.clip();
-  ctx.drawImage(sourceImage, x, y, width, height);
-  ctx.restore();
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.rect(IMAGE_BOX.x, IMAGE_BOX.y, IMAGE_BOX.width, IMAGE_BOX.height);
+  targetCtx.clip();
+  targetCtx.drawImage(sourceImage, x, y, width, height);
+  targetCtx.restore();
 }
 
 function getCropDrawRect() {
@@ -335,41 +351,41 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function drawText() {
+function drawText(targetCtx) {
   const title = getTitleText();
   const dateText = normalizeDate(dateInput.value);
 
-  ctx.save();
-  ctx.textAlign = "right";
-  ctx.textBaseline = "top";
+  targetCtx.save();
+  targetCtx.textAlign = "right";
+  targetCtx.textBaseline = "top";
 
   if (title) {
-    const titleSize = fitTitleFont(title);
-    ctx.font = `${titleSize}px ChillRoundF, "Microsoft YaHei", sans-serif`;
-    ctx.fillStyle = TITLE_COLOR;
-    ctx.fillText(title, TEXT_RIGHT_X, TITLE_TOP_Y);
+    const titleSize = fitTitleFont(targetCtx, title);
+    targetCtx.font = `${titleSize}px ChillRoundF, "Microsoft YaHei", sans-serif`;
+    targetCtx.fillStyle = TITLE_COLOR;
+    targetCtx.fillText(title, TEXT_RIGHT_X, TITLE_TOP_Y);
   }
 
   if (dateText) {
-    ctx.font = '320px ChillRoundF, "Microsoft YaHei", sans-serif';
-    ctx.fillStyle = DATE_COLOR;
-    ctx.fillText(dateText, TEXT_RIGHT_X, DATE_TOP_Y);
+    targetCtx.font = '320px ChillRoundF, "Microsoft YaHei", sans-serif';
+    targetCtx.fillStyle = DATE_COLOR;
+    targetCtx.fillText(dateText, TEXT_RIGHT_X, DATE_TOP_Y);
   }
 
-  ctx.restore();
+  targetCtx.restore();
 }
 
-function fitTitleFont(title) {
+function fitTitleFont(targetCtx, title) {
   for (let size = 145; size >= 72; size -= 4) {
-    ctx.font = `${size}px ChillRoundF, "Microsoft YaHei", sans-serif`;
-    if (ctx.measureText(title).width <= TITLE_MAX_WIDTH) {
+    targetCtx.font = `${size}px ChillRoundF, "Microsoft YaHei", sans-serif`;
+    if (targetCtx.measureText(title).width <= TITLE_MAX_WIDTH) {
       return size;
     }
   }
   return 72;
 }
 
-async function updateDownload() {
+function updateDownloadState() {
   if (!sourceImage) {
     revokeDownloadObjectUrl();
     downloadLink.classList.add("disabled");
@@ -378,26 +394,51 @@ async function updateDownload() {
     return;
   }
 
-  const currentSeq = ++exportSeq;
-  const title = sanitizeFilePart(getTitleText()) || "cover";
-  const date = normalizeDate(dateInput.value).replaceAll("/", "_");
-  const name = sanitizeFilePart(`${date} ${title}`.trim()) || "cover";
-  statusText.textContent = "压缩导出";
-  downloadLink.classList.add("disabled");
-  downloadLink.setAttribute("aria-disabled", "true");
-  const blob = await exportCoverUnderLimit();
-
-  if (currentSeq !== exportSeq || !blob) {
+  if (isExporting) {
     return;
   }
 
-  revokeDownloadObjectUrl();
-  downloadObjectUrl = URL.createObjectURL(blob);
-  downloadLink.href = downloadObjectUrl;
-  downloadLink.download = `${name}.jpg`;
   downloadLink.classList.remove("disabled");
   downloadLink.setAttribute("aria-disabled", "false");
-  statusText.textContent = "生成完成";
+  statusText.textContent = "预览完成";
+}
+
+async function downloadCover() {
+  if (!sourceImage || isExporting) {
+    return;
+  }
+
+  isExporting = true;
+  downloadLink.classList.add("disabled");
+  downloadLink.setAttribute("aria-disabled", "true");
+  statusText.textContent = "压缩导出";
+
+  const title = sanitizeFilePart(getTitleText()) || "cover";
+  const date = normalizeDate(dateInput.value).replaceAll("/", "_");
+  const name = sanitizeFilePart(`${date} ${title}`.trim()) || "cover";
+
+  try {
+    await ensureCoverFontLoaded();
+    const blob = await exportCoverUnderLimit();
+    if (!blob) {
+      statusText.textContent = "导出失败";
+      return;
+    }
+
+    revokeDownloadObjectUrl();
+    downloadObjectUrl = URL.createObjectURL(blob);
+    triggerDownload(downloadObjectUrl, `${name}.jpg`);
+    statusText.textContent = "下载完成";
+  } catch (error) {
+    statusText.textContent = "导出失败";
+    console.error(error);
+  } finally {
+    isExporting = false;
+    if (sourceImage) {
+      downloadLink.classList.remove("disabled");
+      downloadLink.setAttribute("aria-disabled", "false");
+    }
+  }
 }
 
 function getTitleText() {
@@ -409,7 +450,7 @@ function getTitleText() {
 }
 
 function drawPlaceholder() {
-  void renderCover();
+  void renderPreview();
 }
 
 function loadImage(src) {
@@ -441,6 +482,7 @@ function sanitizeFilePart(value) {
 
 async function exportCoverUnderLimit() {
   let fallbackBlob = null;
+  const sourceCanvas = createExportSourceCanvas();
 
   for (const scale of EXPORT_SCALES) {
     const exportCanvas = document.createElement("canvas");
@@ -450,7 +492,7 @@ async function exportCoverUnderLimit() {
     const exportCtx = exportCanvas.getContext("2d");
     exportCtx.imageSmoothingEnabled = true;
     exportCtx.imageSmoothingQuality = "high";
-    exportCtx.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
+    exportCtx.drawImage(sourceCanvas, 0, 0, exportCanvas.width, exportCanvas.height);
 
     for (const quality of EXPORT_QUALITIES) {
       const blob = await canvasToBlob(exportCanvas, EXPORT_MIME, quality);
@@ -465,6 +507,24 @@ async function exportCoverUnderLimit() {
   }
 
   return fallbackBlob;
+}
+
+function createExportSourceCanvas() {
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = CANVAS_WIDTH;
+  exportCanvas.height = CANVAS_HEIGHT;
+  const exportCtx = exportCanvas.getContext("2d");
+  drawCover(exportCtx, 1);
+  return exportCanvas;
+}
+
+function triggerDownload(url, fileName) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
 }
 
 function canvasToBlob(targetCanvas, mimeType, quality) {
