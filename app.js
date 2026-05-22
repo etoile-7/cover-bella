@@ -14,6 +14,8 @@ const EXPORT_MAX_BYTES = 1 * 1024 * 1024;
 const EXPORT_SCALES = [0.72, 0.64, 0.56, 0.48, 0.4, 0.34, 0.3];
 const EXPORT_QUALITIES = [0.86, 0.8, 0.74, 0.68, 0.62, 0.56, 0.48, 0.42];
 const WHEEL_ZOOM_STEP = 0.015;
+const MIN_CROP_ZOOM = 1;
+const MAX_CROP_ZOOM = 3;
 
 const canvas = document.querySelector("#coverCanvas");
 const ctx = canvas.getContext("2d");
@@ -153,7 +155,7 @@ function bindEvents() {
       return;
     }
     event.preventDefault();
-    const nextZoom = clamp(cropZoom + (event.deltaY < 0 ? WHEEL_ZOOM_STEP : -WHEEL_ZOOM_STEP), 1, 1.5);
+    const nextZoom = clamp(cropZoom + (event.deltaY < 0 ? WHEEL_ZOOM_STEP : -WHEEL_ZOOM_STEP), MIN_CROP_ZOOM, MAX_CROP_ZOOM);
     if (nextZoom === cropZoom) {
       return;
     }
