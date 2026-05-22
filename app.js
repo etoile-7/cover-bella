@@ -17,9 +17,11 @@ const WHEEL_ZOOM_STEP = 0.015;
 const MIN_CROP_ZOOM = 1;
 const MAX_CROP_ZOOM = 3;
 const SAVED_STATE_KEY = "cover-bella-state";
+const SAVED_BROWSER_DATE_KEY = "cover-bella-browser-date";
 const IMAGE_DB_NAME = "cover-bella";
 const IMAGE_STORE_NAME = "images";
 const SAVED_IMAGE_KEY = "current";
+const DATE_CHECK_INTERVAL_MS = 60 * 1000;
 
 const canvas = document.querySelector("#coverCanvas");
 const ctx = canvas.getContext("2d");
@@ -48,14 +50,17 @@ let cropOffsetY = 0;
 let isDraggingCrop = false;
 let lastDragPoint = null;
 let checkedTitleTag = titleTagInputs.find((input) => input.checked) || null;
+let browserDateValue = "";
 
-setToday();
+browserDateValue = setToday();
 boot();
 
 async function boot() {
   try {
     templateImage = await loadImage(TEMPLATE_SRC);
+    await clearSavedDraftIfBrowserDateChanged(browserDateValue);
     bindEvents();
+    startBrowserDateWatcher();
     await restoreSavedDraft();
     drawPlaceholder();
   } catch (error) {
@@ -523,6 +528,74 @@ function clampNumber(value, min, max, fallback) {
   return Number.isFinite(number) ? clamp(number, min, max) : fallback;
 }
 
+async function clearSavedDraftIfBrowserDateChanged(today) {
+  let lastDate = "";
+  try {
+    lastDate = localStorage.getItem(SAVED_BROWSER_DATE_KEY) || "";
+  } catch (error) {
+    console.error(error);
+  }
+
+  if (lastDate && lastDate !== today) {
+    await clearSavedDraft();
+  }
+
+  rememberBrowserDate(today);
+}
+
+function startBrowserDateWatcher() {
+  window.setInterval(() => {
+    const today = getTodayValue();
+    if (today === browserDateValue) {
+      return;
+    }
+    browserDateValue = today;
+    dateInput.value = today;
+    void clearCurrentAndSavedDraft(today);
+  }, DATE_CHECK_INTERVAL_MS);
+}
+
+async function clearCurrentAndSavedDraft(today) {
+  await clearSavedDraft();
+  resetCurrentDraft();
+  rememberBrowserDate(today);
+  statusText.textContent = "草稿已清空";
+  drawPlaceholder();
+}
+
+async function clearSavedDraft() {
+  try {
+    localStorage.removeItem(SAVED_STATE_KEY);
+  } catch (error) {
+    console.error(error);
+  }
+  await clearSavedImageBlob();
+}
+
+function resetCurrentDraft() {
+  if (sourceObjectUrl) {
+    URL.revokeObjectURL(sourceObjectUrl);
+  }
+  sourceImage = null;
+  sourceObjectUrl = "";
+  fileName.textContent = "PNG / JPG / WebP，右键粘贴";
+  titleInput.value = "环游世界歌回";
+  for (const input of titleTagInputs) {
+    input.checked = input.value === "【3D】";
+  }
+  checkedTitleTag = titleTagInputs.find((input) => input.checked) || null;
+  resetCrop();
+  updateDownloadState();
+}
+
+function rememberBrowserDate(today) {
+  try {
+    localStorage.setItem(SAVED_BROWSER_DATE_KEY, today);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function drawPlaceholder() {
   void renderPreview();
 }
@@ -638,6 +711,18 @@ async function readSavedImageBlob() {
   }
 }
 
+async function clearSavedImageBlob() {
+  try {
+    const db = await openImageDb();
+    await runImageStoreTransaction(db, "readwrite", (store) => {
+      store.delete(SAVED_IMAGE_KEY);
+    });
+    db.close();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function runImageStoreTransaction(db, mode, action) {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(IMAGE_STORE_NAME, mode);
@@ -707,10 +792,16 @@ async function readImageFromClipboard() {
   return null;
 }
 
-function setToday() {
+function getTodayValue() {
   const now = new Date();
   const year = String(now.getFullYear());
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
-  dateInput.value = `${year}-${month}-${day}`;
+  return `${year}-${month}-${day}`;
+}
+
+function setToday() {
+  const today = getTodayValue();
+  dateInput.value = today;
+  return today;
 }
