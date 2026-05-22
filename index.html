@@ -35,22 +35,6 @@
             <input id="dateInput" type="date">
           </div>
 
-          <div class="field">
-            <label for="zoomInput">画面缩放</label>
-            <input id="zoomInput" type="range" min="1" max="1.5" step="0.01" value="1">
-          </div>
-
-          <div class="offset-grid">
-            <div class="field">
-              <label for="offsetXInput">左右位置</label>
-              <input id="offsetXInput" type="range" min="-1" max="1" step="0.01" value="0">
-            </div>
-            <div class="field">
-              <label for="offsetYInput">上下位置</label>
-              <input id="offsetYInput" type="range" min="-1" max="1" step="0.01" value="0">
-            </div>
-          </div>
-
           <div class="actions">
             <button type="button" class="secondary" id="resetCropButton">重置裁切</button>
             <a class="primary disabled" id="downloadLink" download="cover.png" aria-disabled="true">下载封面</a>
@@ -66,7 +50,7 @@
             <span class="status" id="statusText">等待图片</span>
           </div>
           <div class="canvas-wrap">
-            <canvas id="coverCanvas" width="3780" height="2126"></canvas>
+            <canvas id="coverCanvas" width="3780" height="2126" tabindex="0" aria-label="封面预览"></canvas>
           </div>
         </div>
       </section>

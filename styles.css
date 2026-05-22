@@ -204,17 +204,6 @@ a {
   box-shadow: 0 0 0 3px rgba(234, 255, 245, 0.1);
 }
 
-.field input[type="range"] {
-  width: 100%;
-  accent-color: var(--glow);
-}
-
-.offset-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
 .actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -298,6 +287,18 @@ canvas {
   width: 100%;
   height: auto;
   aspect-ratio: 3780 / 2126;
+  cursor: grab;
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+
+canvas:focus-visible {
+  box-shadow: 0 0 0 3px rgba(234, 255, 245, 0.16);
+}
+
+canvas.is-dragging-crop {
+  cursor: grabbing;
 }
 
 @media (max-width: 920px) {
@@ -320,7 +321,6 @@ canvas {
     padding: 16px;
   }
 
-  .offset-grid,
   .actions {
     grid-template-columns: 1fr;
   }

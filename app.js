@@ -22,9 +22,6 @@ const pasteMenu = document.querySelector("#pasteMenu");
 const pasteImageButton = document.querySelector("#pasteImageButton");
 const titleInput = document.querySelector("#titleInput");
 const dateInput = document.querySelector("#dateInput");
-const zoomInput = document.querySelector("#zoomInput");
-const offsetXInput = document.querySelector("#offsetXInput");
-const offsetYInput = document.querySelector("#offsetYInput");
 const resetCropButton = document.querySelector("#resetCropButton");
 const downloadLink = document.querySelector("#downloadLink");
 const statusText = document.querySelector("#statusText");
@@ -36,6 +33,11 @@ let renderTimer = 0;
 let coverFontReady = false;
 let downloadObjectUrl = "";
 let exportSeq = 0;
+let cropZoom = 1;
+let cropOffsetX = 0;
+let cropOffsetY = 0;
+let isDraggingCrop = false;
+let lastDragPoint = null;
 
 setToday();
 boot();
@@ -85,16 +87,55 @@ function bindEvents() {
     }
   });
 
-  for (const element of [titleInput, dateInput, zoomInput, offsetXInput, offsetYInput]) {
+  for (const element of [titleInput, dateInput]) {
     element.addEventListener("input", scheduleRender);
   }
 
   resetCropButton.addEventListener("click", () => {
-    zoomInput.value = "1";
-    offsetXInput.value = "0";
-    offsetYInput.value = "0";
+    resetCrop();
     scheduleRender();
   });
+
+  canvas.addEventListener("pointerdown", (event) => {
+    if (!sourceImage) {
+      return;
+    }
+    event.preventDefault();
+    canvas.focus();
+    isDraggingCrop = true;
+    lastDragPoint = getCanvasPoint(event);
+    canvas.setPointerCapture(event.pointerId);
+    canvas.classList.add("is-dragging-crop");
+  });
+
+  canvas.addEventListener("pointermove", (event) => {
+    if (!isDraggingCrop || !lastDragPoint) {
+      return;
+    }
+    event.preventDefault();
+    const point = getCanvasPoint(event);
+    cropOffsetX += point.x - lastDragPoint.x;
+    cropOffsetY += point.y - lastDragPoint.y;
+    lastDragPoint = point;
+    clampCropOffset();
+    scheduleRender();
+  });
+
+  canvas.addEventListener("pointerup", endCropDrag);
+  canvas.addEventListener("pointercancel", endCropDrag);
+
+  canvas.addEventListener("wheel", (event) => {
+    if (!sourceImage || document.activeElement !== canvas) {
+      return;
+    }
+    event.preventDefault();
+    const nextZoom = clamp(cropZoom + (event.deltaY < 0 ? 0.04 : -0.04), 1, 1.5);
+    if (nextZoom === cropZoom) {
+      return;
+    }
+    zoomCropAtPoint(nextZoom, getCanvasPoint(event));
+    scheduleRender();
+  }, { passive: false });
 
   dropZone.addEventListener("dragover", (event) => {
     event.preventDefault();
@@ -150,8 +191,15 @@ async function setImageFile(file) {
 
   sourceObjectUrl = URL.createObjectURL(file);
   sourceImage = await loadImage(sourceObjectUrl);
+  resetCrop();
   fileName.textContent = file.name || "剪切板图片";
   scheduleRender();
+}
+
+function resetCrop() {
+  cropZoom = 1;
+  cropOffsetX = 0;
+  cropOffsetY = 0;
 }
 
 function scheduleRender() {
@@ -183,23 +231,86 @@ async function renderCover() {
 }
 
 function drawCoverImage() {
-  const baseScale = Math.max(IMAGE_BOX.width / sourceImage.naturalWidth, IMAGE_BOX.height / sourceImage.naturalHeight);
-  const scale = baseScale * Number(zoomInput.value);
-  const drawWidth = sourceImage.naturalWidth * scale;
-  const drawHeight = sourceImage.naturalHeight * scale;
-  const extraX = Math.max(0, drawWidth - IMAGE_BOX.width);
-  const extraY = Math.max(0, drawHeight - IMAGE_BOX.height);
-  const offsetX = Number(offsetXInput.value) * extraX * 0.5;
-  const offsetY = Number(offsetYInput.value) * extraY * 0.5;
-  const x = IMAGE_BOX.x + (IMAGE_BOX.width - drawWidth) * 0.5 + offsetX;
-  const y = IMAGE_BOX.y + (IMAGE_BOX.height - drawHeight) * 0.5 + offsetY;
+  const { x, y, width, height } = getCropDrawRect();
 
   ctx.save();
   ctx.beginPath();
   ctx.rect(IMAGE_BOX.x, IMAGE_BOX.y, IMAGE_BOX.width, IMAGE_BOX.height);
   ctx.clip();
-  ctx.drawImage(sourceImage, x, y, drawWidth, drawHeight);
+  ctx.drawImage(sourceImage, x, y, width, height);
   ctx.restore();
+}
+
+function getCropDrawRect() {
+  const baseScale = Math.max(IMAGE_BOX.width / sourceImage.naturalWidth, IMAGE_BOX.height / sourceImage.naturalHeight);
+  const scale = baseScale * cropZoom;
+  const width = sourceImage.naturalWidth * scale;
+  const height = sourceImage.naturalHeight * scale;
+  const offset = getClampedCropOffset(width, height);
+  cropOffsetX = offset.x;
+  cropOffsetY = offset.y;
+
+  return {
+    x: IMAGE_BOX.x + (IMAGE_BOX.width - width) * 0.5 + cropOffsetX,
+    y: IMAGE_BOX.y + (IMAGE_BOX.height - height) * 0.5 + cropOffsetY,
+    width,
+    height,
+  };
+}
+
+function getClampedCropOffset(width, height) {
+  const maxX = Math.max(0, width - IMAGE_BOX.width) * 0.5;
+  const maxY = Math.max(0, height - IMAGE_BOX.height) * 0.5;
+  return {
+    x: clamp(cropOffsetX, -maxX, maxX),
+    y: clamp(cropOffsetY, -maxY, maxY),
+  };
+}
+
+function clampCropOffset() {
+  if (!sourceImage) {
+    return;
+  }
+
+  const baseScale = Math.max(IMAGE_BOX.width / sourceImage.naturalWidth, IMAGE_BOX.height / sourceImage.naturalHeight);
+  const width = sourceImage.naturalWidth * baseScale * cropZoom;
+  const height = sourceImage.naturalHeight * baseScale * cropZoom;
+  const offset = getClampedCropOffset(width, height);
+  cropOffsetX = offset.x;
+  cropOffsetY = offset.y;
+}
+
+function zoomCropAtPoint(nextZoom, point) {
+  const oldRect = getCropDrawRect();
+  const ratio = nextZoom / cropZoom;
+  cropZoom = nextZoom;
+  cropOffsetX = IMAGE_BOX.width * 0.5 + (oldRect.x - point.x) * ratio + point.x - IMAGE_BOX.x - oldRect.width * ratio * 0.5;
+  cropOffsetY = IMAGE_BOX.height * 0.5 + (oldRect.y - point.y) * ratio + point.y - IMAGE_BOX.y - oldRect.height * ratio * 0.5;
+  clampCropOffset();
+}
+
+function getCanvasPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (CANVAS_WIDTH / rect.width),
+    y: (event.clientY - rect.top) * (CANVAS_HEIGHT / rect.height),
+  };
+}
+
+function endCropDrag(event) {
+  if (!isDraggingCrop) {
+    return;
+  }
+  isDraggingCrop = false;
+  lastDragPoint = null;
+  canvas.classList.remove("is-dragging-crop");
+  if (canvas.hasPointerCapture(event.pointerId)) {
+    canvas.releasePointerCapture(event.pointerId);
+  }
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function drawText() {
