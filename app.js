@@ -16,6 +16,10 @@ const EXPORT_QUALITIES = [0.86, 0.8, 0.74, 0.68, 0.62, 0.56, 0.48, 0.42];
 const WHEEL_ZOOM_STEP = 0.015;
 const MIN_CROP_ZOOM = 1;
 const MAX_CROP_ZOOM = 3;
+const SAVED_STATE_KEY = "cover-bella-state";
+const IMAGE_DB_NAME = "cover-bella";
+const IMAGE_STORE_NAME = "images";
+const SAVED_IMAGE_KEY = "current";
 
 const canvas = document.querySelector("#coverCanvas");
 const ctx = canvas.getContext("2d");
@@ -51,8 +55,9 @@ boot();
 async function boot() {
   try {
     templateImage = await loadImage(TEMPLATE_SRC);
-    drawPlaceholder();
     bindEvents();
+    await restoreSavedDraft();
+    drawPlaceholder();
   } catch (error) {
     statusText.textContent = "资源异常";
     console.error(error);
@@ -224,6 +229,8 @@ async function setImageFile(file) {
   sourceImage = await loadImage(sourceObjectUrl);
   resetCrop();
   fileName.textContent = file.name || "剪切板图片";
+  persistState();
+  void saveImageBlob(file);
   scheduleRender();
 }
 
@@ -234,6 +241,7 @@ function resetCrop() {
 }
 
 function scheduleRender() {
+  persistState();
   if (renderFrame) {
     return;
   }
@@ -452,6 +460,70 @@ function getTitleText() {
   return `${tags}${titleInput.value.trim()}`;
 }
 
+async function restoreSavedDraft() {
+  const saved = readSavedState();
+
+  if (typeof saved.titleValue === "string") {
+    titleInput.value = saved.titleValue;
+  }
+
+  if (typeof saved.dateValue === "string" && saved.dateValue) {
+    dateInput.value = saved.dateValue;
+  }
+
+  for (const input of titleTagInputs) {
+    input.checked = saved.titleTag === input.value;
+  }
+  checkedTitleTag = titleTagInputs.find((input) => input.checked) || null;
+
+  cropZoom = clampNumber(saved.cropZoom, MIN_CROP_ZOOM, MAX_CROP_ZOOM, 1);
+  cropOffsetX = Number.isFinite(saved.cropOffsetX) ? saved.cropOffsetX : 0;
+  cropOffsetY = Number.isFinite(saved.cropOffsetY) ? saved.cropOffsetY : 0;
+
+  const imageBlob = await readSavedImageBlob();
+  if (!imageBlob) {
+    return;
+  }
+
+  if (sourceObjectUrl) {
+    URL.revokeObjectURL(sourceObjectUrl);
+  }
+  sourceObjectUrl = URL.createObjectURL(imageBlob);
+  sourceImage = await loadImage(sourceObjectUrl);
+  fileName.textContent = saved.fileName || "已保存图片";
+}
+
+function readSavedState() {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_STATE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function persistState() {
+  const checkedTag = titleTagInputs.find((input) => input.checked);
+  const state = {
+    titleValue: titleInput.value,
+    titleTag: checkedTag ? checkedTag.value : "",
+    dateValue: dateInput.value,
+    cropZoom,
+    cropOffsetX,
+    cropOffsetY,
+    fileName: sourceImage ? fileName.textContent : "",
+  };
+  try {
+    localStorage.setItem(SAVED_STATE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? clamp(number, min, max) : fallback;
+}
+
 function drawPlaceholder() {
   void renderPreview();
 }
@@ -528,6 +600,62 @@ function triggerDownload(url, fileName) {
   document.body.append(link);
   link.click();
   link.remove();
+}
+
+function openImageDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(IMAGE_DB_NAME, 1);
+
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(IMAGE_STORE_NAME);
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveImageBlob(blob) {
+  try {
+    const db = await openImageDb();
+    await runImageStoreTransaction(db, "readwrite", (store) => {
+      store.put(blob, SAVED_IMAGE_KEY);
+    });
+    db.close();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function readSavedImageBlob() {
+  try {
+    const db = await openImageDb();
+    const blob = await runImageStoreTransaction(db, "readonly", (store) => store.get(SAVED_IMAGE_KEY));
+    db.close();
+    return blob || null;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+function runImageStoreTransaction(db, mode, action) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(IMAGE_STORE_NAME, mode);
+    const store = transaction.objectStore(IMAGE_STORE_NAME);
+    const request = action(store);
+    let result = null;
+
+    if (request) {
+      request.onsuccess = () => {
+        result = request.result;
+      };
+      request.onerror = () => reject(request.error);
+    }
+
+    transaction.oncomplete = () => resolve(result);
+    transaction.onerror = () => reject(transaction.error);
+  });
 }
 
 function canvasToBlob(targetCanvas, mimeType, quality) {
