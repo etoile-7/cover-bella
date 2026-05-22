@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>录播封面生成</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-label="封面生成器">
+        <div class="panel controls">
+          <div class="brand">
+            <p class="eyebrow">CoverCreate</p>
+            <h1>录播封面生成</h1>
+            <p class="subline">静态封面工作台</p>
+          </div>
+
+          <label class="drop-zone" for="imageInput" id="dropZone">
+            <input id="imageInput" type="file" accept="image/*">
+            <span class="drop-title">上传截图</span>
+            <span class="drop-meta" id="fileName">PNG / JPG / WebP，也可以直接粘贴</span>
+          </label>
+
+          <div class="field">
+            <label for="titleInput">直播标题</label>
+            <input id="titleInput" type="text" value="【3D】环游世界歌回" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="dateInput">直播日期</label>
+            <input id="dateInput" type="date">
+          </div>
+
+          <div class="field">
+            <label for="zoomInput">画面缩放</label>
+            <input id="zoomInput" type="range" min="1" max="1.5" step="0.01" value="1">
+          </div>
+
+          <div class="offset-grid">
+            <div class="field">
+              <label for="offsetXInput">左右位置</label>
+              <input id="offsetXInput" type="range" min="-1" max="1" step="0.01" value="0">
+            </div>
+            <div class="field">
+              <label for="offsetYInput">上下位置</label>
+              <input id="offsetYInput" type="range" min="-1" max="1" step="0.01" value="0">
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="secondary" id="resetCropButton">重置裁切</button>
+            <a class="primary disabled" id="downloadLink" download="cover.png" aria-disabled="true">下载封面</a>
+          </div>
+        </div>
+
+        <div class="panel preview-panel">
+          <div class="preview-head">
+            <div>
+              <p class="eyebrow">Output</p>
+              <h2>3780 x 2126</h2>
+            </div>
+            <span class="status" id="statusText">等待图片</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="coverCanvas" width="3780" height="2126"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
