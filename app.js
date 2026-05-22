@@ -471,10 +471,6 @@ async function restoreSavedDraft() {
     titleInput.value = saved.titleValue;
   }
 
-  if (typeof saved.dateValue === "string" && saved.dateValue) {
-    dateInput.value = saved.dateValue;
-  }
-
   for (const input of titleTagInputs) {
     input.checked = saved.titleTag === input.value;
   }
@@ -510,7 +506,6 @@ function persistState() {
   const state = {
     titleValue: titleInput.value,
     titleTag: checkedTag ? checkedTag.value : "",
-    dateValue: dateInput.value,
     cropZoom,
     cropOffsetX,
     cropOffsetY,
