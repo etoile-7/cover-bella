@@ -333,8 +333,12 @@ function zoomCropAtPoint(nextZoom, point) {
   const oldRect = getCropDrawRect();
   const ratio = nextZoom / cropZoom;
   cropZoom = nextZoom;
-  cropOffsetX = IMAGE_BOX.width * 0.5 + (oldRect.x - point.x) * ratio + point.x - IMAGE_BOX.x - oldRect.width * ratio * 0.5;
-  cropOffsetY = IMAGE_BOX.height * 0.5 + (oldRect.y - point.y) * ratio + point.y - IMAGE_BOX.y - oldRect.height * ratio * 0.5;
+  const width = oldRect.width * ratio;
+  const height = oldRect.height * ratio;
+  const x = point.x - (point.x - oldRect.x) * ratio;
+  const y = point.y - (point.y - oldRect.y) * ratio;
+  cropOffsetX = x - IMAGE_BOX.x - (IMAGE_BOX.width - width) * 0.5;
+  cropOffsetY = y - IMAGE_BOX.y - (IMAGE_BOX.height - height) * 0.5;
   clampCropOffset();
 }
 
