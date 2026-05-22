@@ -18,6 +18,8 @@ const ctx = canvas.getContext("2d");
 const imageInput = document.querySelector("#imageInput");
 const dropZone = document.querySelector("#dropZone");
 const fileName = document.querySelector("#fileName");
+const pasteMenu = document.querySelector("#pasteMenu");
+const pasteImageButton = document.querySelector("#pasteImageButton");
 const titleInput = document.querySelector("#titleInput");
 const dateInput = document.querySelector("#dateInput");
 const zoomInput = document.querySelector("#zoomInput");
@@ -66,6 +68,23 @@ function bindEvents() {
     setImageFile(file);
   });
 
+  dropZone.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    showPasteMenu(event.clientX, event.clientY);
+  });
+
+  pasteImageButton.addEventListener("click", async () => {
+    hidePasteMenu();
+    await pasteImageFromClipboard();
+  });
+
+  document.addEventListener("click", hidePasteMenu);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      hidePasteMenu();
+    }
+  });
+
   for (const element of [titleInput, dateInput, zoomInput, offsetXInput, offsetYInput]) {
     element.addEventListener("input", scheduleRender);
   }
@@ -95,6 +114,33 @@ function bindEvents() {
       setImageFile(file);
     }
   });
+}
+
+function showPasteMenu(x, y) {
+  pasteMenu.hidden = false;
+  const { width, height } = pasteMenu.getBoundingClientRect();
+  const left = Math.min(x, window.innerWidth - width - 8);
+  const top = Math.min(y, window.innerHeight - height - 8);
+  pasteMenu.style.left = `${Math.max(8, left)}px`;
+  pasteMenu.style.top = `${Math.max(8, top)}px`;
+}
+
+function hidePasteMenu() {
+  pasteMenu.hidden = true;
+}
+
+async function pasteImageFromClipboard() {
+  try {
+    const file = await readImageFromClipboard();
+    if (!file) {
+      statusText.textContent = "剪贴板无图片";
+      return;
+    }
+    await setImageFile(file);
+  } catch (error) {
+    statusText.textContent = "无法读取剪贴板";
+    console.error(error);
+  }
 }
 
 async function setImageFile(file) {
@@ -313,6 +359,18 @@ function findImageFromClipboard(clipboardData) {
   for (const item of clipboardData.items) {
     if (item.kind === "file" && item.type.startsWith("image/")) {
       return item.getAsFile();
+    }
+  }
+  return null;
+}
+
+async function readImageFromClipboard() {
+  const clipboardItems = await navigator.clipboard.read();
+
+  for (const item of clipboardItems) {
+    const imageType = item.types.find((type) => type.startsWith("image/"));
+    if (imageType) {
+      return item.getType(imageType);
     }
   }
   return null;
