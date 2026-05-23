@@ -255,6 +255,18 @@ a {
   box-shadow: 0 0 0 3px rgba(234, 255, 245, 0.1);
 }
 
+.date-builder {
+  display: grid;
+  grid-template-columns: 1.4fr 0.85fr 0.85fr;
+  gap: 8px;
+}
+
+.date-builder input {
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
