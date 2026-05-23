@@ -34,7 +34,10 @@ const pasteMenu = document.querySelector("#pasteMenu");
 const pasteImageButton = document.querySelector("#pasteImageButton");
 const titleInput = document.querySelector("#titleInput");
 const titleTagInputs = [...document.querySelectorAll('input[name="titleTag"]')];
-const dateInput = document.querySelector("#dateInput");
+const dateYearInput = document.querySelector("#dateYearInput");
+const dateMonthInput = document.querySelector("#dateMonthInput");
+const dateDayInput = document.querySelector("#dateDayInput");
+const dateInputs = [dateYearInput, dateMonthInput, dateDayInput];
 const resetCropButton = document.querySelector("#resetCropButton");
 const downloadLink = document.querySelector("#downloadLink");
 const statusText = document.querySelector("#statusText");
@@ -105,8 +108,15 @@ function bindEvents() {
     }
   });
 
-  for (const element of [titleInput, dateInput]) {
+  for (const element of [titleInput, ...dateInputs]) {
     element.addEventListener("input", scheduleRender);
+  }
+
+  for (const element of dateInputs) {
+    element.addEventListener("input", () => {
+      element.value = element.value.replace(/\D/g, "").slice(0, element.maxLength);
+    });
+    element.addEventListener("blur", normalizeDateInputParts);
   }
 
   for (const element of titleTagInputs) {
@@ -375,7 +385,7 @@ function clamp(value, min, max) {
 
 function drawText(targetCtx) {
   const title = getTitleText();
-  const dateText = normalizeDate(dateInput.value);
+  const dateText = getDateText();
 
   targetCtx.save();
   targetCtx.textAlign = "right";
@@ -436,7 +446,7 @@ async function downloadCover() {
   statusText.textContent = "压缩导出";
 
   const title = sanitizeFilePart(getTitleText()) || "cover";
-  const date = normalizeDate(dateInput.value).replaceAll("/", "_");
+  const date = getDateFilePart();
   const name = sanitizeFilePart(`${date} ${title}`.trim()) || "cover";
 
   try {
@@ -554,7 +564,7 @@ function startBrowserDateWatcher() {
       return;
     }
     browserDateValue = today;
-    dateInput.value = today;
+    setDateInputs(today);
     void clearCurrentAndSavedDraft(today);
   }, DATE_CHECK_INTERVAL_MS);
 }
@@ -611,20 +621,6 @@ function loadImage(src) {
     image.onerror = reject;
     image.src = src;
   });
-}
-
-function normalizeDate(value) {
-  if (!value) {
-    return "";
-  }
-
-  const matched = value.match(/(20\d{2})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
-  if (!matched) {
-    return value.trim();
-  }
-
-  const [, year, month, day] = matched;
-  return `${year}/${month.padStart(2, "0")}/${day.padStart(2, "0")}`;
 }
 
 function sanitizeFilePart(value) {
@@ -796,6 +792,47 @@ async function readImageFromClipboard() {
   return null;
 }
 
+function getDateParts() {
+  return {
+    year: dateYearInput.value.trim(),
+    month: dateMonthInput.value.trim().padStart(2, "0"),
+    day: dateDayInput.value.trim().padStart(2, "0"),
+  };
+}
+
+function getDateText() {
+  const { year, month, day } = getDateParts();
+  if (!year || !month || !day) {
+    return "";
+  }
+  return `${year} ${month} ${day}`;
+}
+
+function getDateFilePart() {
+  const { year, month, day } = getDateParts();
+  if (!year || !month || !day) {
+    return "";
+  }
+  return `${year}_${month}_${day}`;
+}
+
+function normalizeDateInputParts() {
+  if (dateMonthInput.value) {
+    dateMonthInput.value = dateMonthInput.value.padStart(2, "0");
+  }
+  if (dateDayInput.value) {
+    dateDayInput.value = dateDayInput.value.padStart(2, "0");
+  }
+  scheduleRender();
+}
+
+function setDateInputs(value) {
+  const [year, month, day] = value.split("-");
+  dateYearInput.value = year || "";
+  dateMonthInput.value = month || "";
+  dateDayInput.value = day || "";
+}
+
 function getTodayValue() {
   const now = new Date();
   const year = String(now.getFullYear());
@@ -806,6 +843,6 @@ function getTodayValue() {
 
 function setToday() {
   const today = getTodayValue();
-  dateInput.value = today;
+  setDateInputs(today);
   return today;
 }
