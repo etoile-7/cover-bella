@@ -6,6 +6,7 @@
 
 :root {
   color-scheme: dark;
+  --shell-pad: clamp(14px, 2.4vh, 32px);
   --page: #071019;
   --ink: #fafdff;
   --muted: #c3cfd9;
@@ -27,7 +28,7 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
   background:
     linear-gradient(rgba(209, 217, 230, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(209, 217, 230, 0.045) 1px, transparent 1px),
@@ -45,15 +46,16 @@ a {
 }
 
 .app-shell {
-  min-height: 100vh;
-  padding: 32px;
+  min-height: 100dvh;
+  padding: var(--shell-pad);
 }
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
-  gap: 24px;
-  max-width: 1420px;
+  grid-template-columns: clamp(300px, 25vw, 420px) minmax(0, 1fr);
+  gap: clamp(14px, 1.6vw, 24px);
+  width: 100%;
+  max-width: 1920px;
   margin: 0 auto;
   align-items: stretch;
 }
@@ -68,10 +70,10 @@ a {
 
 .controls {
   position: sticky;
-  top: 32px;
+  top: var(--shell-pad);
   display: grid;
-  gap: 20px;
-  padding: 24px;
+  gap: clamp(14px, 1.8vh, 20px);
+  padding: clamp(18px, 2.2vh, 24px);
 }
 
 .brand h1,
@@ -101,7 +103,7 @@ a {
 .drop-zone {
   display: grid;
   place-items: center;
-  min-height: 150px;
+  min-height: clamp(112px, 16vh, 150px);
   border: 1px dashed var(--line-strong);
   border-radius: 6px;
   background:
@@ -299,7 +301,7 @@ a {
 
 .preview-panel {
   min-width: 0;
-  padding: 20px;
+  padding: clamp(14px, 2vh, 20px);
 }
 
 .preview-head {
@@ -307,7 +309,7 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: clamp(12px, 1.8vh, 18px);
 }
 
 .status {
@@ -358,13 +360,40 @@ canvas.is-dragging-crop {
   }
 
   .app-shell {
-    max-height: 100vh;
+    height: 100dvh;
+    min-height: 0;
     overflow: hidden;
+  }
+
+  .workspace {
+    height: 100%;
+    min-height: 0;
   }
 
   .controls {
     height: 100%;
+    min-height: 0;
     align-content: start;
+  }
+
+  .preview-panel {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+  }
+
+  .canvas-wrap {
+    container-type: size;
+    display: grid;
+    min-height: 0;
+    place-items: center;
+  }
+
+  canvas {
+    width: min(100%, calc(100cqh * 3780 / 2126));
+    max-height: 100%;
+    height: auto;
   }
 }
 
