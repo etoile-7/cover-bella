@@ -478,8 +478,10 @@ async function restoreSavedDraft() {
     titleInput.value = saved.titleValue;
   }
 
-  for (const input of titleTagInputs) {
-    input.checked = saved.titleTag === input.value;
+  if (typeof saved.titleTag === "string") {
+    for (const input of titleTagInputs) {
+      input.checked = saved.titleTag === input.value;
+    }
   }
   checkedTitleTag = titleTagInputs.find((input) => input.checked) || null;
 
