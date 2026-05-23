@@ -255,6 +255,43 @@ a {
   box-shadow: 0 0 0 3px rgba(234, 255, 245, 0.1);
 }
 
+.date-picker {
+  position: relative;
+  min-height: 46px;
+}
+
+.date-picker input[type="date"] {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  min-height: 46px;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.date-builder {
+  display: grid;
+  grid-template-columns: 1.45fr 0.8fr 0.8fr;
+  gap: 8px;
+}
+
+.date-builder span {
+  display: grid;
+  min-height: 46px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(250, 252, 253, 0.08);
+  color: var(--ink);
+  font-weight: 720;
+  letter-spacing: 0.02em;
+}
+
+.date-picker:focus-within .date-builder span {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 3px rgba(234, 255, 245, 0.1);
+}
+
 .actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

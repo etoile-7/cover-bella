@@ -35,6 +35,9 @@ const pasteImageButton = document.querySelector("#pasteImageButton");
 const titleInput = document.querySelector("#titleInput");
 const titleTagInputs = [...document.querySelectorAll('input[name="titleTag"]')];
 const dateInput = document.querySelector("#dateInput");
+const dateYearDisplay = document.querySelector("#dateYearDisplay");
+const dateMonthDisplay = document.querySelector("#dateMonthDisplay");
+const dateDayDisplay = document.querySelector("#dateDayDisplay");
 const resetCropButton = document.querySelector("#resetCropButton");
 const downloadLink = document.querySelector("#downloadLink");
 const statusText = document.querySelector("#statusText");
@@ -108,6 +111,12 @@ function bindEvents() {
   for (const element of [titleInput, dateInput]) {
     element.addEventListener("input", scheduleRender);
   }
+
+  dateInput.addEventListener("input", updateDateDisplay);
+  dateInput.addEventListener("change", () => {
+    updateDateDisplay();
+    scheduleRender();
+  });
 
   for (const element of titleTagInputs) {
     element.addEventListener("click", () => {
@@ -555,6 +564,7 @@ function startBrowserDateWatcher() {
     }
     browserDateValue = today;
     dateInput.value = today;
+    updateDateDisplay();
     void clearCurrentAndSavedDraft(today);
   }, DATE_CHECK_INTERVAL_MS);
 }
@@ -807,5 +817,13 @@ function getTodayValue() {
 function setToday() {
   const today = getTodayValue();
   dateInput.value = today;
+  updateDateDisplay();
   return today;
+}
+
+function updateDateDisplay() {
+  const [year = "----", month = "--", day = "--"] = dateInput.value.split("-");
+  dateYearDisplay.textContent = year || "----";
+  dateMonthDisplay.textContent = month || "--";
+  dateDayDisplay.textContent = day || "--";
 }
