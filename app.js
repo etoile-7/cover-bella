@@ -1,6 +1,6 @@
 const CANVAS_WIDTH = 1920;
 const CANVAS_HEIGHT = 1080;
-const PREVIEW_SCALE = 0.5;
+const PREVIEW_SCALE = 1;
 const IMAGE_BOX = { x: 546, y: 107, width: 1116, height: 623 };
 const TEXT_RIGHT_X = 1664;
 const TITLE_TOP_Y = 766;
