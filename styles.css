@@ -258,20 +258,35 @@ a {
 
 .title-tags.is-prefix-guide::after {
   position: absolute;
-  inset: -8px;
-  border: 1px solid rgba(234, 255, 245, 0.74);
-  border-radius: 8px;
+  inset: -10px;
+  border: 2px solid rgba(234, 255, 245, 0.96);
+  border-radius: 10px;
   box-shadow:
-    0 0 0 4px rgba(234, 255, 245, 0.08),
-    0 0 28px rgba(234, 255, 245, 0.34);
+    0 0 0 4px rgba(234, 255, 245, 0.18),
+    0 0 0 8px rgba(86, 124, 141, 0.18),
+    0 0 36px rgba(234, 255, 245, 0.68);
   content: "";
   pointer-events: none;
+  animation: prefixGuidePulse 1100ms ease-in-out infinite alternate;
 }
 
 .title-tags.is-prefix-guide .tag-option span {
   border-color: var(--line-strong);
-  background: rgba(234, 255, 245, 0.14);
+  background: rgba(234, 255, 245, 0.24);
   color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(234, 255, 245, 0.18);
+}
+
+@keyframes prefixGuidePulse {
+  from {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.015);
+  }
 }
 
 .actions {
@@ -331,8 +346,7 @@ a {
 }
 
 .confirm-dialog::backdrop {
-  background: rgba(3, 8, 14, 0.48);
-  backdrop-filter: blur(1px);
+  background: rgba(3, 8, 14, 0.38);
 }
 
 .confirm-box {
