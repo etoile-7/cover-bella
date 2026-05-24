@@ -264,9 +264,7 @@ async function renderPreview() {
     return;
   }
 
-  if (sourceImage) {
-    await ensureCoverFontLoaded();
-  }
+  await ensureCoverFontLoaded();
   drawCover(ctx, PREVIEW_SCALE);
   updateDownloadState();
 }
