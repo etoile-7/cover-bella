@@ -60,11 +60,14 @@ boot();
 
 async function boot() {
   try {
-    templateImage = await loadImage(TEMPLATE_SRC);
-    await clearSavedDraftIfBrowserDateChanged(browserDateValue);
+    const templateReady = loadImage(TEMPLATE_SRC);
+    const fontReady = ensureCoverFontLoaded();
+    const draftReady = clearSavedDraftIfBrowserDateChanged(browserDateValue).then(() => restoreSavedDraft());
+
+    templateImage = await templateReady;
+    await Promise.all([fontReady, draftReady]);
     bindEvents();
     startBrowserDateWatcher();
-    await restoreSavedDraft();
     drawPlaceholder();
   } catch (error) {
     statusText.textContent = "资源异常";
