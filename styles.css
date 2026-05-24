@@ -337,7 +337,7 @@ canvas {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 3780 / 2126;
+  aspect-ratio: 16 / 9;
   cursor: grab;
   outline: none;
   touch-action: none;
@@ -391,7 +391,7 @@ canvas.is-dragging-crop {
   }
 
   canvas {
-    width: min(100%, calc(100cqh * 3780 / 2126));
+    width: min(100%, calc(100cqh * 16 / 9));
     max-height: 100%;
     height: auto;
   }

@@ -1,19 +1,20 @@
-const CANVAS_WIDTH = 3780;
-const CANVAS_HEIGHT = 2126;
+const CANVAS_WIDTH = 1920;
+const CANVAS_HEIGHT = 1080;
 const PREVIEW_SCALE = 0.5;
-const IMAGE_BOX = { x: 1075, y: 211, width: 2198, height: 1227 };
-const TEXT_RIGHT_X = 3276;
-const TITLE_TOP_Y = 1507;
-const DATE_TOP_Y = 1638;
-const TITLE_MAX_WIDTH = 1780;
-const TITLE_BASE_SIZE = 145;
-const TITLE_MIN_SIZE = 106;
+const IMAGE_BOX = { x: 546, y: 107, width: 1116, height: 623 };
+const TEXT_RIGHT_X = 1664;
+const TITLE_TOP_Y = 766;
+const DATE_TOP_Y = 832;
+const TITLE_MAX_WIDTH = 904;
+const TITLE_BASE_SIZE = 74;
+const TITLE_MIN_SIZE = 54;
+const DATE_FONT_SIZE = 163;
 const TITLE_COLOR = "#eeebff";
 const DATE_COLOR = "#ffffff";
 const TEMPLATE_SRC = "assets/cover-template.webp";
 const EXPORT_MIME = "image/jpeg";
 const EXPORT_MAX_BYTES = 1 * 1024 * 1024;
-const EXPORT_SCALES = [0.72, 0.64, 0.56, 0.48, 0.4, 0.34, 0.3];
+const EXPORT_SCALES = [1];
 const EXPORT_QUALITIES = [0.86, 0.8, 0.74, 0.68, 0.62, 0.56, 0.48, 0.42];
 const WHEEL_ZOOM_STEP = 0.03;
 const MIN_CROP_ZOOM = 1;
@@ -389,7 +390,7 @@ function drawText(targetCtx) {
   }
 
   if (dateText) {
-    targetCtx.font = '320px ChillRoundF, "Microsoft YaHei", sans-serif';
+    targetCtx.font = `${DATE_FONT_SIZE}px ChillRoundF, "Microsoft YaHei", sans-serif`;
     targetCtx.fillStyle = DATE_COLOR;
     targetCtx.fillText(dateText, TEXT_RIGHT_X, DATE_TOP_Y);
   }
@@ -765,8 +766,8 @@ async function ensureCoverFontLoaded() {
     return;
   }
   statusText.textContent = "加载字体";
-  await document.fonts.load("145px ChillRoundF");
-  await document.fonts.load("320px ChillRoundF");
+  await document.fonts.load(`${TITLE_BASE_SIZE}px ChillRoundF`);
+  await document.fonts.load(`${DATE_FONT_SIZE}px ChillRoundF`);
   await document.fonts.ready;
   coverFontReady = true;
 }
