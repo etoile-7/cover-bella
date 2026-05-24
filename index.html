@@ -70,6 +70,17 @@
       </section>
     </main>
 
+    <dialog class="confirm-dialog" id="missingPrefixDialog" aria-labelledby="missingPrefixTitle">
+      <form method="dialog" class="confirm-box">
+        <p class="eyebrow">导出确认</p>
+        <h2 id="missingPrefixTitle">未添加标题前缀，是否继续导出？</h2>
+        <div class="confirm-actions">
+          <button type="submit" class="secondary" value="cancel">取消</button>
+          <button type="submit" class="primary" value="continue">继续</button>
+        </div>
+      </form>
+    </dialog>
+
     <script src="app.js"></script>
   </body>
 </html>

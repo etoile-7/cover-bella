@@ -39,6 +39,8 @@ const dateInput = document.querySelector("#dateInput");
 const resetCropButton = document.querySelector("#resetCropButton");
 const downloadLink = document.querySelector("#downloadLink");
 const statusText = document.querySelector("#statusText");
+const missingPrefixDialog = document.querySelector("#missingPrefixDialog");
+const missingPrefixCancelButton = missingPrefixDialog.querySelector('button[value="cancel"]');
 
 let sourceImage = null;
 let sourceObjectUrl = "";
@@ -198,8 +200,11 @@ function bindEvents() {
     }
   });
 
-  downloadLink.addEventListener("click", (event) => {
+  downloadLink.addEventListener("click", async (event) => {
     event.preventDefault();
+    if (!hasTitlePrefix() && !(await confirmMissingTitlePrefix())) {
+      return;
+    }
     void downloadCover();
   });
 }
@@ -463,6 +468,24 @@ async function downloadCover() {
       downloadLink.setAttribute("aria-disabled", "false");
     }
   }
+}
+
+function hasTitlePrefix() {
+  return titleTagInputs.some((input) => input.checked);
+}
+
+function confirmMissingTitlePrefix() {
+  return new Promise((resolve) => {
+    const closeDialog = () => {
+      missingPrefixDialog.removeEventListener("close", closeDialog);
+      resolve(missingPrefixDialog.returnValue === "continue");
+    };
+
+    missingPrefixDialog.addEventListener("close", closeDialog);
+    missingPrefixDialog.returnValue = "cancel";
+    missingPrefixDialog.showModal();
+    missingPrefixCancelButton.focus();
+  });
 }
 
 function getTitleText() {
