@@ -353,7 +353,7 @@ a {
   width: min(420px, calc(100vw - 32px));
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 14px;
   background: rgba(9, 19, 30, 0.96);
   color: var(--ink);
   box-shadow: var(--shadow);
@@ -381,6 +381,10 @@ a {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.confirm-actions button {
+  border-radius: 10px;
 }
 
 .preview-panel {
