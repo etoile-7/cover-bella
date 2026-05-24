@@ -34,6 +34,7 @@ const fileName = document.querySelector("#fileName");
 const pasteMenu = document.querySelector("#pasteMenu");
 const pasteImageButton = document.querySelector("#pasteImageButton");
 const titleInput = document.querySelector("#titleInput");
+const titleTags = document.querySelector(".title-tags");
 const titleTagInputs = [...document.querySelectorAll('input[name="titleTag"]')];
 const dateInput = document.querySelector("#dateInput");
 const resetCropButton = document.querySelector("#resetCropButton");
@@ -478,11 +479,13 @@ function confirmMissingTitlePrefix() {
   return new Promise((resolve) => {
     const closeDialog = () => {
       missingPrefixDialog.removeEventListener("close", closeDialog);
+      titleTags.classList.remove("is-prefix-guide");
       resolve(missingPrefixDialog.returnValue === "continue");
     };
 
     missingPrefixDialog.addEventListener("close", closeDialog);
     missingPrefixDialog.returnValue = "cancel";
+    titleTags.classList.add("is-prefix-guide");
     missingPrefixDialog.showModal();
     missingPrefixCancelButton.focus();
   });

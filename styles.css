@@ -216,6 +216,7 @@ a {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
+  position: relative;
 }
 
 .tag-option {
@@ -253,6 +254,24 @@ a {
 
 .tag-option input:focus-visible + span {
   box-shadow: 0 0 0 3px rgba(234, 255, 245, 0.1);
+}
+
+.title-tags.is-prefix-guide::after {
+  position: absolute;
+  inset: -8px;
+  border: 1px solid rgba(234, 255, 245, 0.74);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 4px rgba(234, 255, 245, 0.08),
+    0 0 28px rgba(234, 255, 245, 0.34);
+  content: "";
+  pointer-events: none;
+}
+
+.title-tags.is-prefix-guide .tag-option span {
+  border-color: var(--line-strong);
+  background: rgba(234, 255, 245, 0.14);
+  color: var(--ink);
 }
 
 .actions {
@@ -312,8 +331,8 @@ a {
 }
 
 .confirm-dialog::backdrop {
-  background: rgba(3, 8, 14, 0.66);
-  backdrop-filter: blur(4px);
+  background: rgba(3, 8, 14, 0.48);
+  backdrop-filter: blur(1px);
 }
 
 .confirm-box {
